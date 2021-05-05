@@ -41,7 +41,7 @@ module Data.Decimal.Fixed (
 	fromRationalRoundUp
 ) where
 
-import Control.DeepSeq (NFData)
+import Control.DeepSeq (NFData(..))
 import Data.Aeson (FromJSON(..), ToJSON(..), Value(..))
 import Data.Char (isNumber)
 import Data.Functor (($>))
@@ -59,7 +59,7 @@ import Text.Read (readEither)
 
 
 newtype Fixed (precision :: Nat) (scale :: Nat) = Fixed {
-	unFixedBase :: Integer
+	unFixed :: Integer
 } deriving (Enum, Eq, Ord)
 
 instance KnownNat scale => Num (Fixed precision scale) where
@@ -128,6 +128,9 @@ instance KnownNat scale => Read (Fixed precision scale) where
 		where
 			scale = natVal (Proxy :: Proxy scale)
 			scale' = fromIntegral scale
+
+instance NFData (Fixed precision scale) where
+	rnf (Fixed n) = rnf n
 
 fromRationalRoundUp :: forall precision scale . KnownNat scale => Rational -> Fixed precision scale
 fromRationalRoundUp r = Fixed $ q + if m > 0
