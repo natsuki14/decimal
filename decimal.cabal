@@ -4,17 +4,16 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 394a74b9d9da5a89b012a2ffe3143735088095a984d3146605c5c35d7aaf852a
+-- hash: c663c2721992a6904ade0403b84d08e21f62ee4a1f9e42c72494a4b3bfedf59c
 
 name:           decimal
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/decimal#readme>
-homepage:       https://github.com/githubuser/decimal#readme
-bug-reports:    https://github.com/githubuser/decimal/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2021 Author name here
-license:        BSD3
+description:    Please see the README on GitHub at <https://github.com/natsuki14/decimal#readme>
+homepage:       https://github.com/natsuki14/decimal#readme
+bug-reports:    https://github.com/natsuki14/decimal/issues
+author:         Natsuki Kawai
+maintainer:     kawai@charon.tech
+license:        PublicDomain
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
@@ -23,7 +22,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/decimal
+  location: https://github.com/natsuki14/decimal
 
 library
   exposed-modules:
