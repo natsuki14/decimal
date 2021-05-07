@@ -23,21 +23,54 @@ import Database.Persist.Types(SqlType(..), PersistValue(..))
 import GHC.TypeLits (KnownNat, Nat, natVal)
 
 
-newtype Rounded (scale :: Nat) = Rounded {
+data Rounded (scale :: Nat) = PositiveUnit | NegativeUnit | Rounded {
 	unRounded :: Int64
-} deriving (Enum, Eq, Ord)
+} deriving (Eq, Ord)
+
+instance Enum (Rounded scale) where
+	toEnum n
+		| n ==  1 = PositiveUnit
+		| n == -1 = NegativeUnit
+		| n <   0  = Rounded . fromIntegral $ n - 1
+		| n ==  0  = Rounded 0
+		| n >   0  = Rounded . fromIntegral $ n + 1
+	fromEnum (Rounded n)
+		| n < -1     = fromIntegral $ n - 1
+		| n >  1     = fromIntegral $ n + 1
+		| otherwise  = fromIntegral $ n
 
 instance KnownNat scale => Show (Rounded scale) where
-	show = show . toIntegral
+	show n@(Rounded _) = show $ toIntegral n
+	show PositiveUnit = "PositiveUnit"
+	show NegativeUnit = "NegativeUnit"
 
 instance KnownNat scale => Num (Rounded scale) where
-	(Rounded a) + (Rounded b) = Rounded $ a + b
-	(Rounded a) - (Rounded b) = Rounded $ a - b
+	(Rounded a) + (Rounded b)  = Rounded $ a + b
+	(Rounded a) + PositiveUnit = Rounded a
+	(Rounded a) + NegativeUnit = Rounded a
+	PositiveUnit + PositiveUnit = PositiveUnit
+	PositiveUnit + NegativeUnit = Rounded 0
+	NegativeUnit + NegativeUnit = NegativeUnit
+	b + a = a + b
+
 	(Rounded a) * (Rounded b) = Rounded $ a * b * 10 ^ e
 		where e = natVal (Proxy :: Proxy scale)
-	negate (Rounded a) = Rounded $ negate a
+	a * PositiveUnit = a
+	a * NegativeUnit = negate a
+	b * a = a * b
+
+	negate (Rounded a)  = Rounded $ negate a
+	negate PositiveUnit = NegativeUnit
+	negate NegativeUnit = PositiveUnit
+
 	abs (Rounded a) = Rounded $ abs a
-	signum _ = throw LossOfPrecision
+	abs _           = PositiveUnit
+
+	signum (Rounded a)
+		| a <  0 = NegativeUnit
+		| a == 0 = 0
+		| a >  0 = PositiveUnit
+
 	fromInteger = floor
 
 instance KnownNat scale => Real (Rounded scale) where
@@ -48,11 +81,18 @@ instance KnownNat scale => Integral (Rounded scale) where
 		where
 			(q, r) = quotRem a $ b * 10 ^ e
 			e = natVal (Proxy :: Proxy scale)
+	quotRem (Rounded a) PositiveUnit = (Rounded a, 0)
+	quotRem (Rounded a) NegativeUnit = (Rounded (-a), 0)
+	quotRem PositiveUnit (Rounded _) = (0, PositiveUnit)
+	quotRem PositiveUnit b           = (b, 0)
+	quotRem NegativeUnit (Rounded a) = (0, NegativeUnit)
+	quotRem NegativeUnit b           = (-b, 0)
 	toInteger = toIntegral
 
 toIntegral :: forall scale int . (KnownNat scale, Integral int) => Rounded scale -> int
 toIntegral (Rounded a) = fromIntegral a * 10 ^ e
 	where e = natVal (Proxy :: Proxy scale)
+toIntegral _           = 0
 
 floor :: forall scale r . (KnownNat scale, Real r) => r -> Rounded scale
 floor r = Rounded . Prelude.floor $ toRational r / 10 ^ e
@@ -78,6 +118,8 @@ adjustScale (Rounded a)
 	where
 		e1 = natVal (Proxy :: Proxy scale1)
 		e2 = natVal (Proxy :: Proxy scale2)
+adjustScale PositiveUnit = PositiveUnit
+adjustScale NegativeUnit = NegativeUnit
 
 scale :: forall s int . (KnownNat s, Integral int) => Rounded s -> int
 scale _ = fromIntegral . natVal $ (Proxy :: Proxy s)
